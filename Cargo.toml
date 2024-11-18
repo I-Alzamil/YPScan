@@ -1,0 +1,53 @@
+[package]
+name = "YPScan"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["yara_c"]
+yara_c = ["dep:yara"]
+yara_x = ["dep:yara-x"]
+
+[dependencies]
+owo-colors = "4.1"
+enable-ansi-support = "0.2"
+indicatif = "0.17"
+chrono = "0.4"
+walkdir = "2.5"
+sysinfo = "0.32"
+regex = "1.11"
+file-format = { version = "0.26", features = ["reader"]}
+concurrent-queue = "2.5"
+fernet = "0.2"
+md5 = "0.7"
+sha1 = "0.10"
+sha2 = "0.10"
+clap = { version = "4.5", features = ["cargo"]}
+clap-cargo = "0.14"
+local-encoding = "0.2"
+queue-file = "1.4"
+random-string = "1.1"
+yara-x = { version = "0.10", optional = true } # yara_x dependencies
+
+# Windows dependencies
+[target.'cfg(target_os = "windows")'.dependencies]
+codesign-verify = "0.1" # codesign checker
+yara = { version = "0.29", features = ["vendored","openssl-static"], optional = true } # yara_c dependencies for Windows
+
+# Non-Windows dependencies
+[target.'cfg(not(target_os = "windows"))'.dependencies]
+yara = { version = "0.29", features = ["vendored"], optional = true } # yara_c dependencies for Non-Windows
+
+# Build imports for windows
+[target.'cfg(target_os = "windows")'.build-dependencies]
+winresource = "0.1"
+
+# Set different binary name for each feature
+[[bin]]
+name = "YPScan"
+required-features = ["yara_c"]
+
+[[bin]]
+name = "YPScanX"
+path = "src/../src/main.rs"
+required-features = ["yara_x"]
