@@ -582,11 +582,9 @@ pub fn initialize_filescan(
 
     if *matches_count.lock().unwrap() != 0 {
         LOGNOTICE!("Scan have completed in {} and found {} matches",elapsed,*matches_count.lock().unwrap());
-        LOGRESULT!(clean: false,"Matches were found");
         LOGRESULT!(clean: false,"Review matched files as you see fit and proceed with caution");
     } else {
         LOGNOTICE!("Scan have completed in {} and found no matches",elapsed);
-        LOGRESULT!(clean: true,"No matches were found during scan");
         LOGRESULT!(clean: true,"Result is clean");
     }
 
