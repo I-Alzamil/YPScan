@@ -162,7 +162,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                     .num_args(0)
                     .action(clap::ArgAction::SetTrue)
                     .display_order(1)
-                    .help("Display all match reasons instead of only 9")
+                    .help("Display all match reasons instead of only 4")
             )
             .arg(
                 clap::Arg::new("path")
