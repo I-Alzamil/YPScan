@@ -619,7 +619,9 @@ fn excluded_entry(
 }
 
 #[cfg(target_os = "windows")]
-fn get_file_signature(entry: &Path) -> String {
+fn get_file_signature(
+    entry: &Path
+) -> String {
     return match codesign_verify::CodeSignVerifier::for_file(&entry) {
         Ok(valid_verfiy) => {
             match valid_verfiy.verify() {
@@ -641,7 +643,9 @@ fn get_file_signature(entry: &Path) -> String {
 }
 
 #[cfg(target_os = "windows")]
-fn get_file_size(entry: &Path) -> u64 {
+fn get_file_size(
+    entry: &Path
+) -> u64 {
     use std::os::windows::fs::MetadataExt;
     return match entry.metadata() {
         Ok(valid_metadata) => valid_metadata.file_size(),
@@ -686,12 +690,16 @@ fn excluded_entry(
 }
 
 #[cfg(not(target_os = "windows"))]
-fn get_file_signature(_entry: &Path) -> String {
+fn get_file_signature(
+    _entry: &Path
+) -> String {
     return format!("N/A");
 }
 
 #[cfg(not(target_os = "windows"))]
-fn get_file_size(entry: &Path) -> u64 {
+fn get_file_size(
+    entry: &Path
+) -> u64 {
     use std::os::linux::fs::MetadataExt;
     return match entry.metadata() {
         Ok(valid_metadata) => valid_metadata.st_size(),

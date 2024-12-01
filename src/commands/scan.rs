@@ -77,7 +77,10 @@ pub fn initialize_scan() {
     initialize_filescan(rules,malware_hashes,excluded_hashes,excluded_paths);
 }
 
-fn load_file(file_path: &Path,encrypted: bool) -> Result<String,Box<dyn std::error::Error>> {
+fn load_file(
+    file_path: &Path,
+    encrypted: bool
+) -> Result<String,Box<dyn std::error::Error>> {
 
     let loaded_string: String;
 
@@ -90,7 +93,11 @@ fn load_file(file_path: &Path,encrypted: bool) -> Result<String,Box<dyn std::err
     Ok(loaded_string)
 }
 
-fn preload_paths(dir_path: &Path,file_extension: &str,encrypted_file_extension: &str) -> Result<Vec<(PathBuf,bool)>,Box<dyn std::error::Error>> {
+fn preload_paths(
+    dir_path: &Path,
+    file_extension: &str,
+    encrypted_file_extension: &str
+) -> Result<Vec<(PathBuf,bool)>,Box<dyn std::error::Error>> {
     let mut all_preloaded_paths: Vec<(PathBuf,bool)> = Vec::new();
 
     'outer: for entry in WalkDir::new(MY_PATH.join(dir_path)).max_depth(1) {
@@ -121,7 +128,9 @@ fn preload_paths(dir_path: &Path,file_extension: &str,encrypted_file_extension: 
 }
 
 #[cfg(feature = "yara_c")]
-fn load_yara_files(dir_path: &Path) -> Arc<Option<Rules>> {
+fn load_yara_files(
+    dir_path: &Path
+) -> Arc<Option<Rules>> {
 
     fn test_compile_yara_rule(rule: &str) -> Result<(), yara::Error> {
         let mut testcompiler = Compiler::new()?;
@@ -186,7 +195,9 @@ fn load_yara_files(dir_path: &Path) -> Arc<Option<Rules>> {
 }
 
 #[cfg(feature = "yara_x")]
-fn load_yara_files(dir_path: &Path) -> Arc<Option<Rules>> {
+fn load_yara_files(
+    dir_path: &Path
+) -> Arc<Option<Rules>> {
 
     let mut compiler = Compiler::new();
     let _ = compiler.define_global("filename", "");
@@ -238,7 +249,9 @@ fn load_yara_files(dir_path: &Path) -> Arc<Option<Rules>> {
     }
 }
 
-fn load_malware_hashes(dir_path: &Path) -> Arc<Option<HashSet<String>>> {
+fn load_malware_hashes(
+    dir_path: &Path
+) -> Arc<Option<HashSet<String>>> {
 
     let mut hashes: HashSet<String> = HashSet::new();
     
@@ -295,7 +308,9 @@ fn load_malware_hashes(dir_path: &Path) -> Arc<Option<HashSet<String>>> {
     }
 }
 
-fn load_excluded_hashes(dir_path: &Path) -> Arc<Option<HashSet<String>>> {
+fn load_excluded_hashes(
+    dir_path: &Path
+) -> Arc<Option<HashSet<String>>> {
 
     let mut hashes: HashSet<String> = HashSet::new();
 
@@ -343,7 +358,9 @@ fn load_excluded_hashes(dir_path: &Path) -> Arc<Option<HashSet<String>>> {
     }
 }
 
-fn load_excluded_paths(dir_path: &Path) -> Option<RegexSet> {
+fn load_excluded_paths(
+    dir_path: &Path
+) -> Option<RegexSet> {
 
     let binding = MY_PATH.join(dir_path);
     let adjusted_dir_path = binding.as_path();
