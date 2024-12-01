@@ -42,7 +42,7 @@ use yara_x::{
     Compiler
 };
 
-fn check_arguments_and_display_info() {
+pub fn initialize_scan() {
     
     let args = ARGS.subcommand_matches("scan").unwrap();
 
@@ -63,17 +63,37 @@ fn check_arguments_and_display_info() {
     }
 
     LOGINFO!("{}",size_message);
-}
-
-pub fn initialize_scan() {
     
-    check_arguments_and_display_info();
+    // Prepare required variables
+    let rules;
+    let malware_hashes;
+    let excluded_hashes;
+    let excluded_paths;
 
-    let rules = load_yara_files(Path::new("yara"));
-    let malware_hashes = load_malware_hashes(Path::new("iocs"));
-    let excluded_hashes = load_excluded_hashes(Path::new("config"));
-    let excluded_paths = load_excluded_paths(Path::new("config"));
+    // Check if user provied path argument for yara, if not use default path
+    if let Some(path) = args.get_one::<String>("yara-path") {
+        rules = load_yara_files(Path::new(path));
+    } else {
+        rules = load_yara_files(MY_PATH.join("yara").as_path());
+    }
 
+    // Check if user provied path argument for iocs, if not use default path
+    if let Some(path) = args.get_one::<String>("iocs-path") {
+        malware_hashes = load_malware_hashes(Path::new(path));
+    } else {
+        malware_hashes = load_malware_hashes(MY_PATH.join("iocs").as_path());
+    }
+
+    // Check if user provied path argument for config, if not use default path
+    if let Some(path) = args.get_one::<String>("config-path") {
+        excluded_hashes = load_excluded_hashes(Path::new(path));
+        excluded_paths = load_excluded_paths(Path::new(path));
+    } else {
+        excluded_hashes = load_excluded_hashes(MY_PATH.join("config").as_path());
+        excluded_paths = load_excluded_paths(MY_PATH.join("config").as_path());
+    }
+
+    // Start filescan module
     initialize_filescan(rules,malware_hashes,excluded_hashes,excluded_paths);
 }
 
@@ -100,7 +120,7 @@ fn preload_paths(
 ) -> Result<Vec<(PathBuf,bool)>,Box<dyn std::error::Error>> {
     let mut all_preloaded_paths: Vec<(PathBuf,bool)> = Vec::new();
 
-    'outer: for entry in WalkDir::new(MY_PATH.join(dir_path)).max_depth(1) {
+    'outer: for entry in WalkDir::new(dir_path).max_depth(1) {
 
         let dir_entry = entry?;
 
@@ -314,15 +334,12 @@ fn load_excluded_hashes(
 
     let mut hashes: HashSet<String> = HashSet::new();
 
-    let binding = MY_PATH.join(dir_path);
-    let adjusted_dir_path = binding.as_path();
-
     // try to load config file
-    let hashes_content = match load_file(adjusted_dir_path.join("hash-exclusions.cfg").as_path(),false) {
+    let hashes_content = match load_file(dir_path.join("hash-exclusions.cfg").as_path(),false) {
         Ok(valid_file) => Some(valid_file),
         Err(_) => {
             // if unsuccessful try to load encrypted config file
-            match load_file(adjusted_dir_path.join("hash-exclusions.ecfg").as_path(),true) {
+            match load_file(dir_path.join("hash-exclusions.ecfg").as_path(),true) {
                 Ok(valid_file) => Some(valid_file),
                 Err(_) => None,
             }
@@ -361,16 +378,13 @@ fn load_excluded_hashes(
 fn load_excluded_paths(
     dir_path: &Path
 ) -> Option<RegexSet> {
-
-    let binding = MY_PATH.join(dir_path);
-    let adjusted_dir_path = binding.as_path();
     
     // try to load config file
-    let paths_content = match load_file(adjusted_dir_path.join("path-exclusions.cfg").as_path(),false) {
+    let paths_content = match load_file(dir_path.join("path-exclusions.cfg").as_path(),false) {
         Ok(valid_file) => Some(valid_file),
         Err(_) => {
             // if unsuccessful try to load encrypted config file
-            match load_file(adjusted_dir_path.join("path-exclusions.ecfg").as_path(),true) {
+            match load_file(dir_path.join("path-exclusions.ecfg").as_path(),true) {
                 Ok(valid_file) => Some(valid_file),
                 Err(_) => None,
             }

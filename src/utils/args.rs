@@ -38,7 +38,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                     .num_args(0)
                     .global(true)
                     .action(clap::ArgAction::SetTrue)
-                    .display_order(16)
+                    .display_order(19)
                     .help("Enable encoding using windows ansi pages, only works in non tty")
         )
         .arg(
@@ -49,7 +49,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                     .global(true)
                     .conflicts_with_all(["trace","only-alerts"])
                     .action(clap::ArgAction::SetTrue)
-                    .display_order(17)
+                    .display_order(20)
                     .help("Enable more informative logging for debugging")
         )
         .arg(
@@ -60,7 +60,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                     .global(true)
                     .conflicts_with_all(["debug","only-alerts"])
                     .action(clap::ArgAction::SetTrue)
-                    .display_order(18)
+                    .display_order(21)
                     .help("Enable extream logging for debugging")
         )
         .arg(
@@ -70,7 +70,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                 .global(true)
                 .conflicts_with_all(["debug","trace"])
                 .action(clap::ArgAction::SetTrue)
-                .display_order(8)
+                .display_order(11)
                 .help("Filter output level to alerts and higher")
         )
         .arg(
@@ -79,7 +79,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                 .num_args(0)
                 .global(true)
                 .action(clap::ArgAction::SetTrue)
-                .display_order(9)
+                .display_order(12)
                 .help("Switch off console color")
         )
         .arg(
@@ -89,7 +89,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                 .global(true)
                 .conflicts_with_all(["csv-output","json-output"])
                 .action(clap::ArgAction::SetTrue)
-                .display_order(10)
+                .display_order(13)
                 .help("Switch off console output")
         )
         .arg(
@@ -99,7 +99,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                 .global(true)
                 .conflicts_with("json-output")
                 .action(clap::ArgAction::SetTrue)
-                .display_order(11)
+                .display_order(14)
                 .help("Change console logging to csv")
         )
         .arg(
@@ -109,7 +109,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                 .global(true)
                 .conflicts_with("csv-output")
                 .action(clap::ArgAction::SetTrue)
-                .display_order(12)
+                .display_order(15)
                 .help("Change console logging to json")
         )
         .arg(
@@ -119,7 +119,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                 .global(true)
                 .action(clap::ArgAction::SetTrue)
                 .conflicts_with_all(["csv-log","json-log"])
-                .display_order(13)
+                .display_order(16)
                 .help("Switch off file output")
         )
         .arg(
@@ -129,7 +129,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                 .global(true)
                 .conflicts_with("json-log")
                 .action(clap::ArgAction::SetTrue)
-                .display_order(14)
+                .display_order(17)
                 .help("Change log file format to csv")
         )
         .arg(
@@ -139,7 +139,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                 .global(true)
                 .conflicts_with("csv-log")
                 .action(clap::ArgAction::SetTrue)
-                .display_order(15)
+                .display_order(18)
                 .help("Change log file format to json")
         )
         .subcommand_required(true)
@@ -202,6 +202,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
             )
             .arg(
                 clap::Arg::new("power")
+                    .short('P')
                     .long("power")
                     .num_args(0)
                     .action(clap::ArgAction::SetTrue)
@@ -211,6 +212,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
             )
             .arg(
                 clap::Arg::new("no-progress")
+                    .short('q')
                     .long("no-progress")
                     .num_args(0)
                     .action(clap::ArgAction::SetTrue)
@@ -222,6 +224,30 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                     ])
                     .display_order(7)
                     .help("Disable progress display and tracking")
+            )
+            .arg(
+                clap::Arg::new("yara-path")
+                    .short('y')
+                    .long("yara-path")
+                    .value_name("PATH")
+                    .display_order(8)
+                    .help("Path to yara rule files (defaults to yara next to the executable)")
+            )
+            .arg(
+                clap::Arg::new("iocs-path")
+                    .short('i')
+                    .long("iocs-path")
+                    .value_name("PATH")
+                    .display_order(9)
+                    .help("Path to iocs files (defaults to iocs next to the executable)")
+            )
+            .arg(
+                clap::Arg::new("config-path")
+                    .short('c')
+                    .long("config-path")
+                    .value_name("PATH")
+                    .display_order(10)
+                    .help("Path to config files (defaults to config next to the executable)")
             )
         )
         .subcommand(
