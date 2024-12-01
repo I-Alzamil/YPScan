@@ -328,7 +328,7 @@ pub fn initialize_filescan(
                                         found_match = true;
                                     }
                                     let rule_number = get_reason_number(result.len());
-                                    if rule_number > 9 && !args.get_flag("all-reasons") {
+                                    if rule_number > 4 && !args.get_flag("all-reasons") {
                                         break;
                                     }
                                     result.push((format!("MatchReason_{}",rule_number),format!("Yara Match")));
@@ -388,7 +388,7 @@ pub fn initialize_filescan(
                                         found_match = true;
                                     }
                                     let rule_number = get_reason_number(result.len());
-                                    if rule_number > 9 && !args.get_flag("all-reasons") {
+                                    if rule_number > 4 && !args.get_flag("all-reasons") {
                                         break;
                                     }
                                     result.push((format!("MatchReason_{}",rule_number),format!("Yara Match")));
