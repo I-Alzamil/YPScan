@@ -172,6 +172,18 @@ fn setup_logger() {
         lock.set_ansi(true);
         drop(lock);
     }
+    if let Some(syslog_connection) = ARGS.get_one::<String>("syslog") {
+        let mut connection_string = syslog_connection.split("://");
+        if connection_string.clone().count() == 2 {
+            let protocol = connection_string.next().unwrap();
+            let connection = connection_string.next().unwrap();
+            let mut lock = LOGGER.write().unwrap();
+            lock.create_syslog(protocol,connection,1);
+            drop(lock);
+        } else {
+            LOGERROR!("Unable to read syslog connection string. Make sure to use either udp://IP:PORT or tcp://IP:PORT");
+        }
+    }
 }
 
 fn initialize(){

@@ -27,6 +27,8 @@ clap-cargo = "0.14"
 local-encoding = "0.2"
 queue-file = "1.4"
 random-string = "1.1"
+syslog = "6.1.1"
+rand = "0.8"
 yara-x = { version = "0.10", optional = true } # yara_x dependencies
 
 # Windows dependencies

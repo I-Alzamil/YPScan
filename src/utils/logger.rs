@@ -8,6 +8,13 @@ use std::{
     sync::Mutex
 };
 
+use rand::Rng;
+
+use syslog::{
+    Formatter3164,
+    LoggerBackend,
+};
+
 use owo_colors::OwoColorize;
 
 use crate::utils::statics::{
@@ -496,6 +503,7 @@ pub struct Logger {
     filelock: Mutex<()>,
     filetype: OutputType,
     ansiencoding: bool,
+    syslog: Option<Mutex<syslog::Logger<LoggerBackend, Formatter3164>>>
 }
 
 // Sets default settings for logger.
@@ -512,6 +520,7 @@ impl Default for Logger {
             filelock: Mutex::new(()),
             filetype: OutputType::LOG,
             ansiencoding: false,
+            syslog: None
         }
     }
 }
@@ -523,6 +532,9 @@ impl Logger {
         }
         if self.logtofile {
             self.logtofile(level,message,kvl);
+        }
+        if self.syslog.is_some() {
+            self.logtosyslog(level, message, kvl);
         }
     }
     fn logtoconsole(&self,level: &Level,message: &String,kvl: &Option<&Vec<(String,String)>>,color: owo_colors::AnsiColors){
@@ -656,6 +668,33 @@ impl Logger {
         let result = self.json_format(level,message,kvl);
         let _ = writeln!(&mut file,"{result}");
         drop(lock);
+    }
+    fn logtosyslog(&self,level: &Level,message: &String,kvl: &Option<&Vec<(String,String)>>){
+        match &self.syslog {
+            Some(syslog_logger) => {
+                let mut full_message = format!("{message}");
+                match kvl {
+                    Some(list) => {
+                        for kv in list.iter() {
+                            full_message = [full_message,format!("{}{}\"{}\"",kv.0,":",kv.1.to_string())].join(" ");
+                        }
+                    }
+                    None => {}
+                }
+                let mut sender = syslog_logger.lock().unwrap();
+                let _ = match level {
+                    Level::Trace | Level::Debug => sender.debug(full_message),
+                    Level::Info | Level::Success | Level::Result => sender.info(full_message),
+                    Level::Notice => sender.notice(full_message),
+                    Level::Warn => sender.warning(full_message),
+                    Level::Alert => sender.alert(full_message),
+                    Level::Error => sender.err(full_message),
+                    Level::Fatal => sender.crit(full_message),
+                };
+                drop(sender);
+            }
+            None => {}
+        }
     }
     fn csv_format(&self,level: &Level,message: &String,kvl: &Option<&Vec<(String,String)>>) -> String{
         let full_message = format!("\"{}\",\"{}\",\"{}\",\"{}\"",level,chrono::offset::Utc::now().format("%Y-%m-%d_%T%.3f"),HOSTNAME.as_str(),message);
@@ -794,6 +833,46 @@ impl Logger {
             self.progress.as_ref().unwrap().finish_and_clear();
         }
         self.progress = None;
+    }
+    pub fn create_syslog(&mut self,protocol: &str,connection: &str,try_count: u8){
+        let process_name = match std::env::current_exe() {
+            Ok(path) => format!("{}",path.file_name().unwrap_or(std::ffi::OsStr::new("YPScan")).to_string_lossy()),
+            Err(_) => format!("YPScan"),
+        };
+        let formatter = syslog::Formatter3164 {
+            facility: syslog::Facility::LOG_SYSLOG,
+            hostname: Some(HOSTNAME.to_string()),
+            process: process_name,
+            pid: std::process::id(),
+        };
+        if protocol.eq_ignore_ascii_case("udp") {
+            let mut rng = rand::thread_rng();
+            let port = rng.gen_range(49152..65535);
+            match syslog::udp(formatter, format!("0.0.0.0:{}",port).as_str(),connection) {
+                Ok(logger) => {
+                    self.syslog = Some(Mutex::new(logger))
+                }
+                Err(e) => {
+                    // Try to bind to a source port 3 times before raising an error
+                    if try_count >= 4 {
+                        println!("Unable to configure udp syslog due to {}",e)
+                    } else {
+                        self.create_syslog(protocol, connection, try_count+1);
+                    }
+                }
+            }
+        } else if protocol.eq_ignore_ascii_case("tcp") {
+            match syslog::tcp(formatter, connection) {
+                Ok(logger) => {
+                    self.syslog = Some(Mutex::new(logger))
+                }
+                Err(e) => {
+                    println!("Unable to configure tcp syslog due to {}",e)
+                }
+            }
+        } else {
+            println!("Unable to configure syslog due to unknown protocal")
+        }
     }
     pub fn set_logtoconsole(&mut self,logtoconsole: bool){
         self.logtoconsole = logtoconsole;

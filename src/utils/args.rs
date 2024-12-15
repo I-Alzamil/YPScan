@@ -142,6 +142,15 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                 .display_order(18)
                 .help("Change log file format to json")
         )
+        .arg(
+            clap::Arg::new("syslog")
+                .long("syslog")
+                .global(true)
+                .value_name("CONNECTION")
+                .value_parser(clap::value_parser!(String))
+                .display_order(19)
+                .help("Enable logging to syslog (format: udp://192.168.1.5:514)")
+        )
         .subcommand_required(true)
         .subcommand(
             clap::command!("scan")
