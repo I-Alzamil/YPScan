@@ -45,7 +45,7 @@ pub fn decrypt_file_to_file_buffered(
         if n == 0 {
             break;
         }
-        buffer.pop(); // to remove the new line 
+        buffer = buffer.trim_end().to_string(); // to remove the new line
         writer.write_all(&fernet.decrypt(&buffer)?)?;
         buffer.clear();
     }
@@ -65,7 +65,7 @@ pub fn decrypt_file_to_string_buffered(
         if n == 0 {
             break;
         }
-        buffer.pop(); // to remove the new line
+        buffer = buffer.trim_end().to_string(); // to remove the new line
         writer.write_all(&fernet.decrypt(&buffer)?)?;
         buffer.clear();
     }
