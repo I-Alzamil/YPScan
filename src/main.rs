@@ -108,10 +108,16 @@ fn setup_display() {
         color = false;
     }
 
+    if args.contains(&"no-progress".to_string()) {
+        progress = false;
+    }
+
     // Set logger color and progress option
     let mut lock = LOGGER.write().unwrap();
     lock.set_color(color);
-    lock.set_logprogress(progress);
+    if progress {
+        lock.create_progress();
+    }
     drop(lock);
     
     // Display header
@@ -173,14 +179,20 @@ fn setup_logger() {
         drop(lock);
     }
     if let Some(syslog_connection) = ARGS.get_one::<String>("syslog") {
+        let mut lock = LOGGER.write().unwrap();
         let mut connection_string = syslog_connection.split("://");
         if connection_string.clone().count() == 2 {
             let protocol = connection_string.next().unwrap();
             let connection = connection_string.next().unwrap();
-            let mut lock = LOGGER.write().unwrap();
-            lock.create_syslog(protocol,connection,1);
-            drop(lock);
+            match lock.create_syslog(protocol,connection,1) {
+                Ok(_) => drop(lock),
+                Err(e) => {
+                    drop(lock);
+                    LOGERROR!("{e}");
+                }
+            }
         } else {
+            drop(lock);
             LOGERROR!("Unable to read syslog connection string. Make sure to use either udp://IP:PORT or tcp://IP:PORT");
         }
     }

@@ -8,30 +8,32 @@ use std::{
     sync::Mutex
 };
 
-use rand::Rng;
-
-use syslog::{
-    Formatter3164,
-    LoggerBackend,
+use indicatif::{
+    ProgressBar,
+    ProgressStyle,
+    ProgressDrawTarget
 };
 
+use rand::Rng;
 use owo_colors::OwoColorize;
 
 use crate::utils::statics::{
+    LOGGER,
     MY_PATH,
     DATETIME,
-    HOSTNAME
+    HOSTNAME,
+    PROCESS_NAME
 };
 
 macro_rules! LOGTRACE {
     (kvl: $kvl:expr,$($arg:tt)+) => {{
         let lock = LOGGER.read().unwrap();
-        lock.trace(format!($($arg)*),Some($kvl));
+        lock.trace(format!($($arg)*),Some($kvl),None);
         drop(lock);
     }};
     ($($arg:tt)*) => {{
         let lock = LOGGER.read().unwrap();
-        lock.trace(format!($($arg)*),None);
+        lock.trace(format!($($arg)*),None,None);
         drop(lock);
     }};
 }
@@ -39,12 +41,12 @@ macro_rules! LOGTRACE {
 macro_rules! LOGDEBUG {
     (kvl: $kvl:expr,$($arg:tt)+) => {{
         let lock = LOGGER.read().unwrap();
-        lock.debug(format!($($arg)*),Some($kvl));
+        lock.debug(format!($($arg)*),Some($kvl),None);
         drop(lock);
     }};
     ($($arg:tt)*) => {{
         let lock = LOGGER.read().unwrap();
-        lock.debug(format!($($arg)*),None);
+        lock.debug(format!($($arg)*),None,None);
         drop(lock);
     }};
 }
@@ -52,12 +54,12 @@ macro_rules! LOGDEBUG {
 macro_rules! LOGINFO {
     (kvl: $kvl:expr,$($arg:tt)+) => {{
         let lock = LOGGER.read().unwrap();
-        lock.info(format!($($arg)*),Some($kvl));
+        lock.info(format!($($arg)*),Some($kvl),None);
         drop(lock);
     }};
     ($($arg:tt)*) => {{
         let lock = LOGGER.read().unwrap();
-        lock.info(format!($($arg)*),None);
+        lock.info(format!($($arg)*),None,None);
         drop(lock);
     }};
 }
@@ -65,12 +67,12 @@ macro_rules! LOGINFO {
 macro_rules! LOGSUCCESS {
     (kvl: $kvl:expr,$($arg:tt)+) => {{
         let lock = LOGGER.read().unwrap();
-        lock.success(format!($($arg)*),Some($kvl));
+        lock.success(format!($($arg)*),Some($kvl),None);
         drop(lock);
     }};
     ($($arg:tt)*) => {{
         let lock = LOGGER.read().unwrap();
-        lock.success(format!($($arg)*),None);
+        lock.success(format!($($arg)*),None,None);
         drop(lock);
     }};
 }
@@ -78,17 +80,17 @@ macro_rules! LOGSUCCESS {
 macro_rules! LOGRESULT {
     (clean: $clean:expr,kvl: $kvl:expr,$($arg:tt)+) => {{
         let lock = LOGGER.read().unwrap();
-        lock.result(format!($($arg)*),Some($kvl),$clean);
+        lock.result(format!($($arg)*),Some($kvl),$clean,None);
         drop(lock);
     }};
     (clean: $clean:expr,$($arg:tt)*) => {{
         let lock = LOGGER.read().unwrap();
-        lock.result(format!($($arg)*),None,$clean);
+        lock.result(format!($($arg)*),None,$clean,None);
         drop(lock);
     }};
     ($($arg:tt)*) => {{
         let lock = LOGGER.read().unwrap();
-        lock.result(format!($($arg)*),None,true);
+        lock.result(format!($($arg)*),None,true,None);
         drop(lock);
     }};
 }
@@ -96,12 +98,12 @@ macro_rules! LOGRESULT {
 macro_rules! LOGNOTICE {
     (kvl: $kvl:expr,$($arg:tt)+) => {{
         let lock = LOGGER.read().unwrap();
-        lock.notice(format!($($arg)*),Some($kvl));
+        lock.notice(format!($($arg)*),Some($kvl),None);
         drop(lock);
     }};
     ($($arg:tt)*) => {{
         let lock = LOGGER.read().unwrap();
-        lock.notice(format!($($arg)*),None);
+        lock.notice(format!($($arg)*),None,None);
         drop(lock);
     }};
 }
@@ -109,12 +111,12 @@ macro_rules! LOGNOTICE {
 macro_rules! LOGWARN {
     (kvl: $kvl:expr,$($arg:tt)+) => {{
         let lock = LOGGER.read().unwrap();
-        lock.warn(format!($($arg)*),Some($kvl));
+        lock.warn(format!($($arg)*),Some($kvl),None);
         drop(lock);
     }};
     ($($arg:tt)*) => {{
         let lock = LOGGER.read().unwrap();
-        lock.warn(format!($($arg)*),None);
+        lock.warn(format!($($arg)*),None,None);
         drop(lock);
     }};
 }
@@ -122,12 +124,12 @@ macro_rules! LOGWARN {
 macro_rules! LOGALERT {
     (kvl: $kvl:expr,$($arg:tt)+) => {{
         let lock = LOGGER.read().unwrap();
-        lock.alert(format!($($arg)*),Some($kvl));
+        lock.alert(format!($($arg)*),Some($kvl),None);
         drop(lock);
     }};
     ($($arg:tt)*) => {{
         let lock = LOGGER.read().unwrap();
-        lock.alert(format!($($arg)*),None);
+        lock.alert(format!($($arg)*),None,None);
         drop(lock);
     }};
 }
@@ -135,12 +137,12 @@ macro_rules! LOGALERT {
 macro_rules! LOGERROR {
     (kvl: $kvl:expr,$($arg:tt)+) => {{
         let lock = LOGGER.read().unwrap();
-        lock.error(format!($($arg)*),Some($kvl));
+        lock.error(format!($($arg)*),Some($kvl),None);
         drop(lock);
     }};
     ($($arg:tt)*) => {{
         let lock = LOGGER.read().unwrap();
-        lock.error(format!($($arg)*),None);
+        lock.error(format!($($arg)*),None,None);
         drop(lock);
     }};
 }
@@ -148,27 +150,27 @@ macro_rules! LOGERROR {
 macro_rules! LOGFATAL {
     (kvl: $kvl:expr,$($arg:tt)+) => {{
         let lock = LOGGER.read().unwrap();
-        lock.fatal(format!($($arg)*),Some($kvl));
+        lock.fatal(format!($($arg)*),Some($kvl),None);
         drop(lock);
     }};
     ($($arg:tt)*) => {{
         let lock = LOGGER.read().unwrap();
-        lock.fatal(format!($($arg)*),None);
+        lock.fatal(format!($($arg)*),None,None);
         drop(lock);
     }};
 }
 
-macro_rules! CREATEPROGRESS {
+macro_rules! SETPROGRESS {
     ($length:expr) => {{
-        let mut lock = LOGGER.write().unwrap();
-        lock.create_progress($length);
+        let lock = LOGGER.read().unwrap();
+        lock.set_progress($length);
         drop(lock);
     }};
 }
 
 macro_rules! INCLENGTHPROGRESS {
     ($length:expr) => {{
-        let mut lock = LOGGER.write().unwrap();
+        let lock = LOGGER.read().unwrap();
         lock.inc_length_progress($length);
         drop(lock);
     }};
@@ -176,7 +178,7 @@ macro_rules! INCLENGTHPROGRESS {
 
 macro_rules! INCPROGRESS {
     ($length:expr) => {{
-        let mut lock = LOGGER.write().unwrap();
+        let lock = LOGGER.read().unwrap();
         lock.inc_progress($length);
         drop(lock);
     }};
@@ -184,7 +186,7 @@ macro_rules! INCPROGRESS {
 
 macro_rules! DELETEPROGRESS {
     () => {{
-        let mut lock = LOGGER.write().unwrap();
+        let lock = LOGGER.read().unwrap();
         lock.delete_progress();
         drop(lock);
     }};
@@ -201,7 +203,7 @@ pub(crate) use {
     LOGALERT,
     LOGERROR,
     LOGFATAL,
-    CREATEPROGRESS,
+    SETPROGRESS,
     INCLENGTHPROGRESS,
     INCPROGRESS,
     DELETEPROGRESS
@@ -492,18 +494,24 @@ pub enum OutputType {
     CSV,
     JSON,
 }
+
+pub enum LOGType {
+    CONSOLE,
+    FILE,
+    SYSLOG,
+}
+
 pub struct Logger {
     color: bool,
     logfilter: LevelFilter,
     logtoconsole: bool,
     consoletype: OutputType,
-    progress: Option<indicatif::ProgressBar>,
-    logprogress: bool,
+    progress: Option<Mutex<ProgressBar>>,
     logtofile: bool,
     filelock: Mutex<()>,
     filetype: OutputType,
     ansiencoding: bool,
-    syslog: Option<Mutex<syslog::Logger<LoggerBackend, Formatter3164>>>
+    syslog: Option<Mutex<String>>
 }
 
 // Sets default settings for logger.
@@ -515,7 +523,6 @@ impl Default for Logger {
             logtoconsole: true,
             consoletype: OutputType::LOG,
             progress: None,
-            logprogress: true,
             logtofile: true,
             filelock: Mutex::new(()),
             filetype: OutputType::LOG,
@@ -526,14 +533,14 @@ impl Default for Logger {
 }
 
 impl Logger {
-    fn process_log(&self,level: &Level,message: &String,kvl: &Option<&Vec<(String,String)>>,color: owo_colors::AnsiColors){
-        if self.logtoconsole {
+    fn process_log(&self,level: &Level,message: &String,kvl: &Option<&Vec<(String,String)>>,color: owo_colors::AnsiColors,exclude: Option<LOGType>){
+        if self.logtoconsole && exclude.as_ref().is_none_or(|log_type| !matches!(log_type,LOGType::CONSOLE)) {
             self.logtoconsole(level,message,kvl,color);
         }
-        if self.logtofile {
+        if self.logtofile && exclude.as_ref().is_none_or(|log_type| !matches!(log_type,LOGType::FILE)) {
             self.logtofile(level,message,kvl);
         }
-        if self.syslog.is_some() {
+        if self.syslog.is_some() && exclude.as_ref().is_none_or(|log_type| !matches!(log_type,LOGType::SYSLOG)) {
             self.logtosyslog(level, message, kvl);
         }
     }
@@ -541,7 +548,7 @@ impl Logger {
         match self.consoletype {
             OutputType::LOG => {
                 if self.color{
-                    self.print_log(self.add_color(&level,message,kvl,color));
+                    self.print_log(self.add_color(level,message,kvl,color));
                 } else {
                     let level_with_message = format!("[{}] {}",level,message);
                     let full_message: String;
@@ -562,8 +569,8 @@ impl Logger {
                     self.print_log(full_message);
                 }
             }
-            OutputType::CSV => self.print_csv(level,message,kvl),
-            OutputType::JSON => self.print_json(level,message,kvl),
+            OutputType::CSV => self.print_log(format!("{}",self.csv_format(level,message,kvl))),
+            OutputType::JSON => self.print_log(format!("{}",self.json_format(level,message,kvl))),
         }
     }
     fn add_color(&self,level: &Level,message: &String,kvl: &Option<&Vec<(String,String)>>,color: owo_colors::AnsiColors) -> String {
@@ -588,24 +595,17 @@ impl Logger {
     fn print_log(&self,full_message: String){
         match self.progress.as_ref() {
             Some(prog) => {
-                prog.println(full_message);
+                let lock = prog.lock().unwrap();
+                lock.println(full_message);
             }
             None => {
-                self.print_to_console(full_message);
+                // Check if ansiencoding is activated
+                if !self.ansiencoding {
+                    println!("{full_message}");
+                } else {
+                    self.ansi_println(full_message);
+                }
             }
-        }
-    }
-    fn print_csv(&self,level: &Level,message: &String,kvl: &Option<&Vec<(String,String)>>){
-        self.print_to_console(format!("{}",self.csv_format(level,message,kvl)));
-    }
-    fn print_json(&self,level: &Level,message: &String,kvl: &Option<&Vec<(String,String)>>){
-        self.print_to_console(format!("{}",self.json_format(level,message,kvl)));
-    }
-    fn print_to_console(&self,full_message: String) {
-        if !self.ansiencoding {
-            println!("{full_message}");
-        } else {
-            self.ansi_println(full_message);
         }
     }
     fn ansi_println(&self,full_message: String) {
@@ -621,17 +621,27 @@ impl Logger {
         std_out.flush().unwrap_or_default();
     }
     fn logtofile(&self,level: &Level,message: &String,kvl: &Option<&Vec<(String,String)>>){
-        match self.filetype {
-            OutputType::LOG => self.logtofile_log(level,message,kvl),
-            OutputType::CSV => self.logtofile_csv(level,message,kvl),
-            OutputType::JSON => self.logtofile_json(level,message,kvl),
-        }
-    }
-    fn logtofile_log(&self,level: &Level,message: &String,kvl: &Option<&Vec<(String,String)>>){
+        let extention = match self.filetype {
+            OutputType::LOG => "log",
+            OutputType::CSV => "csv",
+            OutputType::JSON => "json",
+        };
         let lock = self.filelock.lock().unwrap();
-        let file_name = format!("YPScan_{}.log",DATETIME.as_str());
+        let file_name = format!("YPScan_{}.{}",DATETIME.as_str(),extention);
         let file_path = MY_PATH.join(file_name);
         let mut file = OpenOptions::new().write(true).create(true).append(true).open(file_path).unwrap();
+        let result = match self.filetype {
+            OutputType::LOG => self.log_format(level,message,kvl),
+            OutputType::CSV => self.csv_format(level,message,kvl),
+            OutputType::JSON => self.json_format(level,message,kvl),
+        };
+        match writeln!(&mut file,"{result}") {
+            Ok(_) => {}
+            Err(e) => self.error(format!("Unable to write to file due to {}",e), None, Some(LOGType::FILE)),
+        }
+        drop(lock);
+    }
+    fn log_format(&self,level: &Level,message: &String,kvl: &Option<&Vec<(String,String)>>) -> String{
         let full_message = format!("{: <7} - {} - {} - {}",level,chrono::offset::Utc::now().format("%Y-%m-%d %T%.3f"),HOSTNAME.as_str(),message);
         let result: String;
         match kvl {
@@ -648,53 +658,7 @@ impl Logger {
                 result = format!("{}",full_message);
             }
         }
-        let _ = writeln!(&mut file,"{result}");
-        drop(lock);
-    }
-    fn logtofile_csv(&self,level: &Level,message: &String,kvl: &Option<&Vec<(String,String)>>){
-        let lock = self.filelock.lock().unwrap();
-        let file_name = format!("YPScan_{}.csv",DATETIME.as_str());
-        let file_path = MY_PATH.join(file_name);
-        let mut file = OpenOptions::new().write(true).create(true).append(true).open(file_path).unwrap();
-        let result = self.csv_format(level,message,kvl);
-        let _ = writeln!(&mut file,"{result}");
-        drop(lock);
-    }
-    fn logtofile_json(&self,level: &Level,message: &String,kvl: &Option<&Vec<(String,String)>>){
-        let lock = self.filelock.lock().unwrap();
-        let file_name = format!("YPScan_{}.json",DATETIME.as_str());
-        let file_path = MY_PATH.join(file_name);
-        let mut file = OpenOptions::new().write(true).create(true).append(true).open(file_path).unwrap();
-        let result = self.json_format(level,message,kvl);
-        let _ = writeln!(&mut file,"{result}");
-        drop(lock);
-    }
-    fn logtosyslog(&self,level: &Level,message: &String,kvl: &Option<&Vec<(String,String)>>){
-        match &self.syslog {
-            Some(syslog_logger) => {
-                let mut full_message = format!("{message}");
-                match kvl {
-                    Some(list) => {
-                        for kv in list.iter() {
-                            full_message = [full_message,format!("{}{}\"{}\"",kv.0,":",kv.1.to_string())].join(" ");
-                        }
-                    }
-                    None => {}
-                }
-                let mut sender = syslog_logger.lock().unwrap();
-                let _ = match level {
-                    Level::Trace | Level::Debug => sender.debug(full_message),
-                    Level::Info | Level::Success | Level::Result => sender.info(full_message),
-                    Level::Notice => sender.notice(full_message),
-                    Level::Warn => sender.warning(full_message),
-                    Level::Alert => sender.alert(full_message),
-                    Level::Error => sender.err(full_message),
-                    Level::Fatal => sender.crit(full_message),
-                };
-                drop(sender);
-            }
-            None => {}
-        }
+        return result;
     }
     fn csv_format(&self,level: &Level,message: &String,kvl: &Option<&Vec<(String,String)>>) -> String{
         let full_message = format!("\"{}\",\"{}\",\"{}\",\"{}\"",level,chrono::offset::Utc::now().format("%Y-%m-%d_%T%.3f"),HOSTNAME.as_str(),message);
@@ -748,130 +712,204 @@ impl Logger {
         }
         return result;
     }
-    pub fn trace(&self,message: String,kvl: Option<&Vec<(String,String)>>){
-        if Level::Trace <= self.logfilter {
-            self.process_log(&Level::Trace, &message, &kvl, owo_colors::AnsiColors::Blue);
-        }
-    }
-    pub fn debug(&self,message: String,kvl: Option<&Vec<(String,String)>>){
-        if Level::Debug <= self.logfilter {
-            self.process_log(&Level::Debug, &message, &kvl, owo_colors::AnsiColors::BrightBlue);
-        }
-    }
-    pub fn info(&self,message: String,kvl: Option<&Vec<(String,String)>>){
-        if Level::Info <= self.logfilter {
-            self.process_log(&Level::Info, &message, &kvl, owo_colors::AnsiColors::Cyan);
-        }
-    }
-    pub fn success(&self,message: String,kvl: Option<&Vec<(String,String)>>){
-        if Level::Success <= self.logfilter {
-            self.process_log(&Level::Success, &message, &kvl, owo_colors::AnsiColors::Green);
-        }
-    }
-    pub fn result(&self,message: String,kvl: Option<&Vec<(String,String)>>,clean: bool){
-        if Level::Result <= self.logfilter {
-           if clean {
-                self.process_log(&Level::Result, &message, &kvl, owo_colors::AnsiColors::Green);
-           } else {
-                self.process_log(&Level::Result, &message, &kvl, owo_colors::AnsiColors::BrightRed);
-           }
-        }
-    }
-    pub fn notice(&self,message: String,kvl: Option<&Vec<(String,String)>>){
-        if Level::Notice <= self.logfilter {
-            self.process_log(&Level::Notice, &message, &kvl, owo_colors::AnsiColors::BrightCyan);
-        }
-    }
-    pub fn warn(&self,message: String,kvl: Option<&Vec<(String,String)>>){
-        if Level::Warn <= self.logfilter {
-            self.process_log(&Level::Warn, &message, &kvl, owo_colors::AnsiColors::BrightYellow);
-        }
-    }
-    pub fn alert(&self,message: String,kvl: Option<&Vec<(String,String)>>){
-        if Level::Alert <= self.logfilter {
-            self.process_log(&Level::Alert, &message, &kvl, owo_colors::AnsiColors::BrightRed);
-        }
-    }
-    pub fn error(&self,message: String,kvl: Option<&Vec<(String,String)>>){
-        if Level::Error <= self.logfilter {
-            self.process_log(&Level::Error, &message, &kvl, owo_colors::AnsiColors::Red);
-        }
-    }
-    pub fn fatal(&self,message: String,kvl: Option<&Vec<(String,String)>>){
-        if Level::Fatal <= self.logfilter {
-            self.process_log(&Level::Fatal, &message, &kvl, owo_colors::AnsiColors::BrightMagenta);
-        }
-    }
-    pub fn create_progress(&mut self,length: u64) {
-        if self.logprogress {
-            let _ = self.progress.insert(indicatif::ProgressBar::new(length)).enable_steady_tick(Duration::from_millis(100));
-            if self.color {
-                self.progress
-                    .as_ref()
-                    .unwrap()
-                    .set_style(indicatif::ProgressStyle::with_template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} ({percent}%) ").unwrap().progress_chars("#>-"))
-            } else {
-                self.progress
-                    .as_ref()
-                    .unwrap()
-                    .set_style(indicatif::ProgressStyle::with_template("{spinner} [{elapsed_precise}] [{wide_bar}] {pos}/{len} ({percent}%) ").unwrap().progress_chars("#>-"))
-            }
-        }
-    }
-    pub fn inc_length_progress(&mut self,len_value: u64){
-        if self.progress.is_some() {
-            self.progress.as_ref().unwrap().inc_length(len_value);
-        }
-    }
-    pub fn inc_progress(&mut self,inc_value: u64){
-        if self.progress.is_some() {
-            self.progress.as_ref().unwrap().inc(inc_value);
-        }
-    }
-    pub fn delete_progress(&mut self){
-        if self.progress.is_some() {
-            self.progress.as_ref().unwrap().finish_and_clear();
-        }
-        self.progress = None;
-    }
-    pub fn create_syslog(&mut self,protocol: &str,connection: &str,try_count: u8){
-        let process_name = match std::env::current_exe() {
-            Ok(path) => format!("{}",path.file_name().unwrap_or(std::ffi::OsStr::new("YPScan")).to_string_lossy()),
-            Err(_) => format!("YPScan"),
-        };
+    fn logtosyslog(&self,level: &Level,message: &String,kvl: &Option<&Vec<(String,String)>>){
         let formatter = syslog::Formatter3164 {
             facility: syslog::Facility::LOG_SYSLOG,
             hostname: Some(HOSTNAME.to_string()),
-            process: process_name,
+            process: PROCESS_NAME.to_string(),
+            pid: std::process::id(),
+        };
+        let mut full_message = format!("{message}");
+        match kvl {
+            Some(list) => {
+                for kv in list.iter() {
+                    full_message = [full_message,format!("{}{}\"{}\"",kv.0,":",kv.1.to_string())].join(" ");
+                }
+            }
+            None => {}
+        }
+        match &self.syslog {
+            Some(syslog_logger) => {
+                let syslog_info = syslog_logger.lock().unwrap();
+                let mut slices = syslog_info.split(",");
+                if slices.clone().count() == 3 {
+                    let protocol = slices.next().unwrap();
+                    let address = slices.next().unwrap();
+                    let local_port = slices.next().unwrap();
+                    if protocol == "tcp" {
+                        match syslog::tcp(formatter,address) {
+                            Err(e) => {
+                                drop(syslog_info);
+                                LOGERROR!("Cannot to connect to tcp syslog due to {}", e);
+                            }
+                            Ok(mut writer) => {
+                                let _ = match level {
+                                    Level::Trace | Level::Debug => writer.debug(full_message),
+                                    Level::Info | Level::Success | Level::Result => writer.info(full_message),
+                                    Level::Notice => writer.notice(full_message),
+                                    Level::Warn => writer.warning(full_message),
+                                    Level::Alert => writer.alert(full_message),
+                                    Level::Error => writer.err(full_message),
+                                    Level::Fatal => writer.crit(full_message),
+                                };
+                            }
+                        };
+                    } else if protocol == "udp" {
+                        match syslog::udp(formatter,format!("0.0.0.0:{}",local_port).as_str(),address) {
+                            Err(e) => {
+                                drop(syslog_info);
+                                LOGERROR!("Cannot to connect to udp syslog due to {}", e);
+                            }
+                            Ok(mut writer) => {
+                                let _ = match level {
+                                    Level::Trace | Level::Debug => writer.debug(full_message),
+                                    Level::Info | Level::Success | Level::Result => writer.info(full_message),
+                                    Level::Notice => writer.notice(full_message),
+                                    Level::Warn => writer.warning(full_message),
+                                    Level::Alert => writer.alert(full_message),
+                                    Level::Error => writer.err(full_message),
+                                    Level::Fatal => writer.crit(full_message),
+                                };
+                            }
+                        };
+                    } else {
+                        drop(syslog_info);
+                        LOGERROR!("Cannot to connect to syslog due to protocal error");
+                    }
+                } else {
+                    drop(syslog_info);
+                    LOGERROR!("Cannot to connect to syslog due to internal slices error");
+                }
+            }
+            None => {}
+        }
+    }
+    pub fn trace(&self,message: String,kvl: Option<&Vec<(String,String)>>,exclude: Option<LOGType>){
+        if Level::Trace <= self.logfilter {
+            self.process_log(&Level::Trace, &message, &kvl, owo_colors::AnsiColors::Blue, exclude);
+        }
+    }
+    pub fn debug(&self,message: String,kvl: Option<&Vec<(String,String)>>,exclude: Option<LOGType>){
+        if Level::Debug <= self.logfilter {
+            self.process_log(&Level::Debug, &message, &kvl, owo_colors::AnsiColors::BrightBlue, exclude);
+        }
+    }
+    pub fn info(&self,message: String,kvl: Option<&Vec<(String,String)>>,exclude: Option<LOGType>){
+        if Level::Info <= self.logfilter {
+            self.process_log(&Level::Info, &message, &kvl, owo_colors::AnsiColors::Cyan, exclude);
+        }
+    }
+    pub fn success(&self,message: String,kvl: Option<&Vec<(String,String)>>,exclude: Option<LOGType>){
+        if Level::Success <= self.logfilter {
+            self.process_log(&Level::Success, &message, &kvl, owo_colors::AnsiColors::Green, exclude);
+        }
+    }
+    pub fn result(&self,message: String,kvl: Option<&Vec<(String,String)>>,clean: bool,exclude: Option<LOGType>){
+        if Level::Result <= self.logfilter {
+           if clean {
+                self.process_log(&Level::Result, &message, &kvl, owo_colors::AnsiColors::Green, exclude);
+           } else {
+                self.process_log(&Level::Result, &message, &kvl, owo_colors::AnsiColors::BrightRed, exclude);
+           }
+        }
+    }
+    pub fn notice(&self,message: String,kvl: Option<&Vec<(String,String)>>,exclude: Option<LOGType>){
+        if Level::Notice <= self.logfilter {
+            self.process_log(&Level::Notice, &message, &kvl, owo_colors::AnsiColors::BrightCyan, exclude);
+        }
+    }
+    pub fn warn(&self,message: String,kvl: Option<&Vec<(String,String)>>,exclude: Option<LOGType>){
+        if Level::Warn <= self.logfilter {
+            self.process_log(&Level::Warn, &message, &kvl, owo_colors::AnsiColors::BrightYellow, exclude);
+        }
+    }
+    pub fn alert(&self,message: String,kvl: Option<&Vec<(String,String)>>,exclude: Option<LOGType>){
+        if Level::Alert <= self.logfilter {
+            self.process_log(&Level::Alert, &message, &kvl, owo_colors::AnsiColors::BrightRed, exclude);
+        }
+    }
+    pub fn error(&self,message: String,kvl: Option<&Vec<(String,String)>>,exclude: Option<LOGType>){
+        if Level::Error <= self.logfilter {
+            self.process_log(&Level::Error, &message, &kvl, owo_colors::AnsiColors::Red, exclude);
+        }
+    }
+    pub fn fatal(&self,message: String,kvl: Option<&Vec<(String,String)>>,exclude: Option<LOGType>){
+        if Level::Fatal <= self.logfilter {
+            self.process_log(&Level::Fatal, &message, &kvl, owo_colors::AnsiColors::BrightMagenta, exclude);
+        }
+    }
+    pub fn set_progress(&self,length: u64) {
+        if self.progress.is_some() {
+            let prog = self.progress.as_ref().unwrap().lock().unwrap();
+            prog.set_length(length);
+            prog.enable_steady_tick(Duration::from_millis(100));
+            if self.color {
+                prog.set_style(ProgressStyle::with_template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} ({percent}%) ").unwrap().progress_chars("#>-"))
+            } else {
+                prog.set_style(ProgressStyle::with_template("{spinner} [{elapsed_precise}] [{wide_bar}] {pos}/{len} ({percent}%) ").unwrap().progress_chars("#>-"))
+            }
+        }
+    }
+    pub fn inc_length_progress(&self,len_value: u64){
+        if self.progress.is_some() {
+            let prog = self.progress.as_ref().unwrap().lock().unwrap();
+            prog.inc_length(len_value);
+        }
+    }
+    pub fn inc_progress(&self,inc_value: u64){
+        if self.progress.is_some() {
+            let prog = self.progress.as_ref().unwrap().lock().unwrap();
+            prog.inc(inc_value);
+        }
+    }
+    pub fn delete_progress(&self){
+        if self.progress.is_some() {
+            let prog = self.progress.as_ref().unwrap().lock().unwrap();
+            prog.finish_and_clear();
+        }
+    }
+    pub fn create_progress(&mut self) {
+        let mut new_progress = ProgressBar::with_draw_target(None,ProgressDrawTarget::stdout());
+        new_progress = new_progress.with_style(ProgressStyle::default_spinner());
+        self.progress = Some(Mutex::new(new_progress));
+    }
+    pub fn create_syslog(
+        &mut self,
+        protocol: &str,
+        connection: &str,
+        try_count: u8
+    ) -> Result<(), String> {
+        let formatter = syslog::Formatter3164 {
+            facility: syslog::Facility::LOG_SYSLOG,
+            hostname: Some(HOSTNAME.to_string()),
+            process: PROCESS_NAME.to_string(),
             pid: std::process::id(),
         };
         if protocol.eq_ignore_ascii_case("udp") {
             let mut rng = rand::thread_rng();
             let port = rng.gen_range(49152..65535);
             match syslog::udp(formatter, format!("0.0.0.0:{}",port).as_str(),connection) {
-                Ok(logger) => {
-                    self.syslog = Some(Mutex::new(logger))
-                }
+                Ok(_) => self.syslog = Some(Mutex::new(format!("udp,{connection},{port}"))),
                 Err(e) => {
                     // Try to bind to a source port 3 times before raising an error
                     if try_count >= 4 {
-                        println!("Unable to configure udp syslog due to {}",e)
+                        return Err(format!("Unable to configure udp syslog due to {}",e));
                     } else {
-                        self.create_syslog(protocol, connection, try_count+1);
+                        self.create_syslog(protocol, connection, try_count+1)?;
                     }
                 }
             }
+            Ok(())
         } else if protocol.eq_ignore_ascii_case("tcp") {
-            match syslog::tcp(formatter, connection) {
-                Ok(logger) => {
-                    self.syslog = Some(Mutex::new(logger))
-                }
+            match std::net::TcpStream::connect(connection) {
+                Ok(_) => self.syslog = Some(Mutex::new(format!("tcp,{connection},none"))),
                 Err(e) => {
-                    println!("Unable to configure tcp syslog due to {}",e)
+                    return Err(format!("Unable to configure tcp syslog due to {}",e));
                 }
             }
+            Ok(())
         } else {
-            println!("Unable to configure syslog due to unknown protocal")
+            return Err(format!("Unable to configure syslog due to unknown protocal"))
         }
     }
     pub fn set_logtoconsole(&mut self,logtoconsole: bool){
@@ -879,9 +917,6 @@ impl Logger {
     }
     pub fn set_logconsoletype(&mut self,consoletype: OutputType){
         self.consoletype = consoletype;
-    }
-    pub fn set_logprogress(&mut self,logprogress: bool){
-        self.logprogress = logprogress;
     }
     pub fn set_logtofile(&mut self,logtofile: bool){
         self.logtofile = logtofile;

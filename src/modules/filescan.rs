@@ -46,7 +46,7 @@ use crate::{
     LOGALERT,
     LOGERROR,
     LOGFATAL,
-    CREATEPROGRESS,
+    SETPROGRESS,
     INCLENGTHPROGRESS,
     INCPROGRESS,
     DELETEPROGRESS,
@@ -145,15 +145,6 @@ pub fn initialize_filescan(
         let shared_excluded_hashes = Arc::clone(&excluded_hashes);
         let shared_matches_count = Arc::clone(&matches_count);
         handlers.push((thread_id+1,thread::spawn(move || {
-
-            let no_progress = ARGS.subcommand_matches("scan").unwrap().get_flag("no-progress");
-
-            fn inc_progress(no_progress: bool) {
-                if !no_progress {
-                    INCPROGRESS!(1);
-                }
-            }
-
             fn get_reason_number(size: usize) -> usize {
                 return (size / 3) + 1
             }
@@ -304,7 +295,7 @@ pub fn initialize_filescan(
                     }
                     Err(e) => {
                         LOGDEBUG!("Unable to scan file {} due to {}",file.display(),e);
-                        inc_progress(no_progress);
+                        INCPROGRESS!(1);
                         continue;
                     }
                 }
@@ -363,7 +354,7 @@ pub fn initialize_filescan(
                             }
                             Err(e) => {
                                 LOGDEBUG!("Unable to scan file {} due to {}",file.display(),e);
-                                inc_progress(no_progress);
+                                INCPROGRESS!(1);
                                 continue;
                             }
                         }
@@ -427,7 +418,7 @@ pub fn initialize_filescan(
                             }
                             Err(e) => {
                                 LOGDEBUG!("Unable to scan file {} due to {}",file.display(),e);
-                                inc_progress(no_progress);
+                                INCPROGRESS!(1);
                                 continue;
                             }
                         }
@@ -443,14 +434,12 @@ pub fn initialize_filescan(
                     LOGTRACE!(kvl: info,"Finished scanning file without any match")
                 }
 
-                inc_progress(no_progress);
+                INCPROGRESS!(1);
             }
         })));
     }
 
-    if !args.get_flag("no-progress") {
-        CREATEPROGRESS!(0);
-    }
+    SETPROGRESS!(0);
 
     let file_size_limit: u64;
 
@@ -509,9 +498,7 @@ pub fn initialize_filescan(
                     }
                 }
 
-                if !args.get_flag("no-progress") {
-                    INCLENGTHPROGRESS!(1);
-                }
+                INCLENGTHPROGRESS!(1);
             }
         }
     }

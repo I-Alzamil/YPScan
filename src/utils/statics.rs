@@ -15,6 +15,13 @@ use crate::{
     LOGFATAL
 };
 
+pub static PROCESS_NAME: LazyLock<String> = LazyLock::new(|| {
+    match std::env::current_exe() {
+        Ok(path) => format!("{}",path.file_name().unwrap_or(std::ffi::OsStr::new("YPScan")).to_string_lossy()),
+        Err(_) => format!("YPScan"),
+    }
+});
+
 // Set parent path of exe as this is where we load iocs and write logs to
 pub static MY_PATH: LazyLock<PathBuf> = LazyLock::new(||{
     fn get_current_path() -> PathBuf {
