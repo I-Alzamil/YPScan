@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/YPScan.exe",
+            "args": ["scan"],
+            "cwd": "${workspaceFolder}",
+            "externalConsole": true,
+            "preLaunchTask": "rust: cargo build"
+        }
+    ]
+}

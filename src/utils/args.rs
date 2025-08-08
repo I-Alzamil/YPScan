@@ -1,22 +1,15 @@
-use std::sync::LazyLock;
-use clap::ArgMatches;
+use std::io::IsTerminal;
 
-use crate::VERSION;
+use crate::utils::statics::{
+    ARGS,
+    LOGGER
+};
+use crate::utils::logger::{
+    LOGLevel,
+    OutputType
+};
 
-use super::statics::LOGGER;
-
-// Styling and colors
-pub const CLAP_STYLING: clap::builder::styling::Styles = clap::builder::styling::Styles::styled()
-    .header(clap_cargo::style::HEADER)
-    .usage(clap_cargo::style::USAGE)
-    .literal(clap_cargo::style::LITERAL)
-    .placeholder(clap_cargo::style::PLACEHOLDER)
-    .error(clap_cargo::style::ERROR)
-    .valid(clap_cargo::style::VALID)
-    .invalid(clap_cargo::style::INVALID);
-
-// Main args variable
-pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
+pub fn set_args() -> clap::Command {
     // Check if color is disabled and if so, do the same in clap
     let color_choice: clap::ColorChoice;
     let lock = LOGGER.read().unwrap();
@@ -27,41 +20,42 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
     }
     drop(lock);
 
-    let cmd = clap::Command::new("YPScan")
-        .version(VERSION)
+    // Build the args
+    clap::Command::new("YPScan")
+        .version(crate::utils::constants::PKG_VERSION)
         .color(color_choice)
         .bin_name("YPScan")
-        .styles(CLAP_STYLING)
+        .styles(crate::utils::constants::CLAP_STYLING)
         .arg(
             clap::Arg::new("ansi-encoding")
-                    .long("ansi-encoding")
-                    .num_args(0)
-                    .global(true)
-                    .action(clap::ArgAction::SetTrue)
-                    .display_order(19)
-                    .help("Enable encoding using windows ansi pages, only works in non tty")
+                .long("ansi-encoding")
+                .num_args(0)
+                .global(true)
+                .action(clap::ArgAction::SetTrue)
+                .display_order(21)
+                .help("Enable encoding using windows ansi pages, only works in non tty")
         )
         .arg(
             clap::Arg::new("debug")
-                    .short('d')
-                    .long("debug")
-                    .num_args(0)
-                    .global(true)
-                    .conflicts_with_all(["trace","only-alerts"])
-                    .action(clap::ArgAction::SetTrue)
-                    .display_order(20)
-                    .help("Enable more informative logging for debugging")
+                .short('d')
+                .long("debug")
+                .num_args(0)
+                .global(true)
+                .conflicts_with_all(["trace","only-alerts"])
+                .action(clap::ArgAction::SetTrue)
+                .display_order(22)
+                .help("Enable more informative logging for debugging")
         )
         .arg(
             clap::Arg::new("trace")
-                    .short('v')
-                    .long("trace")
-                    .num_args(0)
-                    .global(true)
-                    .conflicts_with_all(["debug","only-alerts"])
-                    .action(clap::ArgAction::SetTrue)
-                    .display_order(21)
-                    .help("Enable extream logging for debugging")
+                .short('v')
+                .long("trace")
+                .num_args(0)
+                .global(true)
+                .conflicts_with_all(["debug","only-alerts"])
+                .action(clap::ArgAction::SetTrue)
+                .display_order(23)
+                .help("Enable extream logging for debugging")
         )
         .arg(
             clap::Arg::new("only-alerts")
@@ -113,13 +107,23 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                 .help("Change console logging to json")
         )
         .arg(
+            clap::Arg::new("file-name")
+                .long("file-name")
+                .global(true)
+                .value_name("FILENAME")
+                .value_parser(clap::value_parser!(String))
+                .conflicts_with("no-log")
+                .display_order(16)
+                .help("Sets a custom filename to the log file")
+        )
+        .arg(
             clap::Arg::new("no-log")
                 .long("no-log")
                 .num_args(0)
                 .global(true)
                 .action(clap::ArgAction::SetTrue)
-                .conflicts_with_all(["csv-log","json-log"])
-                .display_order(16)
+                .conflicts_with_all(["file-name","csv-log","json-log"])
+                .display_order(17)
                 .help("Switch off file output")
         )
         .arg(
@@ -129,7 +133,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                 .global(true)
                 .conflicts_with("json-log")
                 .action(clap::ArgAction::SetTrue)
-                .display_order(17)
+                .display_order(18)
                 .help("Change log file format to csv")
         )
         .arg(
@@ -139,7 +143,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                 .global(true)
                 .conflicts_with("csv-log")
                 .action(clap::ArgAction::SetTrue)
-                .display_order(18)
+                .display_order(19)
                 .help("Change log file format to json")
         )
         .arg(
@@ -148,7 +152,7 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                 .global(true)
                 .value_name("CONNECTION")
                 .value_parser(clap::value_parser!(String))
-                .display_order(19)
+                .display_order(20)
                 .help("Enable logging to syslog (format: udp://192.168.1.5:514)")
         )
         .subcommand_required(true)
@@ -292,6 +296,82 @@ pub static ARGS: LazyLock<ArgMatches> = LazyLock::new(||{
                         .value_name("PATH")
                         .help("Path to output decrypted files")
                 )
-        );
-    cmd.get_matches()
-});
+    )
+}
+
+pub fn setup_logger() {
+    // Check all logger related arguments and modify logger for each change
+    if ARGS.get_flag("debug") {
+        let mut lock = LOGGER.write().unwrap();
+        lock.set_logfilter(LOGLevel::Debug);
+        drop(lock);
+    }
+    if ARGS.get_flag("trace") {
+        let mut lock = LOGGER.write().unwrap();
+        lock.set_logfilter(LOGLevel::Trace);
+        drop(lock);
+    }
+    if ARGS.get_flag("only-alerts") {
+        let mut lock = LOGGER.write().unwrap();
+        lock.set_logfilter(LOGLevel::Alert);
+        drop(lock);
+    }
+    if ARGS.get_flag("no-output") {
+        let mut lock = LOGGER.write().unwrap();
+        lock.set_logtoconsole(false);
+        drop(lock);
+    }
+    if ARGS.get_flag("csv-output") {
+        let mut lock = LOGGER.write().unwrap();
+        lock.set_logconsoletype(OutputType::CSV);
+        drop(lock);
+    }
+    if ARGS.get_flag("json-output") {
+        let mut lock = LOGGER.write().unwrap();
+        lock.set_logconsoletype(OutputType::JSON);
+        drop(lock);
+    }
+    if let Ok(Some(file_name)) = ARGS.try_get_one::<String>("file-name") {
+        let mut lock = LOGGER.write().unwrap();
+        lock.set_logtofile(true,Some(file_name.to_string()));
+        drop(lock);
+    }
+    if ARGS.get_flag("no-log") {
+        let mut lock = LOGGER.write().unwrap();
+        lock.set_logtofile(false,None);
+        drop(lock);
+    }
+    if ARGS.get_flag("csv-log") {
+        let mut lock = LOGGER.write().unwrap();
+        lock.set_logfiletype(OutputType::CSV);
+        drop(lock);
+    }
+    if ARGS.get_flag("json-log") {
+        let mut lock = LOGGER.write().unwrap();
+        lock.set_logfiletype(OutputType::JSON);
+        drop(lock);
+    }
+    if ARGS.get_flag("ansi-encoding") && !std::io::stdout().is_terminal() {
+        let mut lock = LOGGER.write().unwrap();
+        lock.set_ansi(true);
+        drop(lock);
+    }
+    if let Ok(Some(syslog_connection)) = ARGS.try_get_one::<String>("syslog") {
+        let mut lock = LOGGER.write().unwrap();
+        let mut connection_string = syslog_connection.split("://");
+        if connection_string.clone().count() == 2 {
+            let protocol = connection_string.next().unwrap();
+            let connection = connection_string.next().unwrap();
+            match lock.create_syslog(protocol,connection,1) {
+                Ok(_) => drop(lock),
+                Err(e) => {
+                    drop(lock);
+                    crate::LOGERROR!("{e}");
+                }
+            }
+        } else {
+            drop(lock);
+            crate::LOGERROR!("Unable to read syslog connection string. Make sure to use either udp://IP:PORT or tcp://IP:PORT");
+        }
+    }
+}

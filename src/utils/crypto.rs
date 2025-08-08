@@ -10,7 +10,7 @@ use std::{
     }
 };
 
-use crate::KEY;
+use super::constants::KEY;
 
 pub fn encrypt_file_to_file_buffered(
     in_file: &Path,

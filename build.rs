@@ -2,7 +2,10 @@ fn main() -> Result<(),Box<dyn std::error::Error>> {
     #[cfg(all(feature = "yara_c", feature = "yara_x"))]
     compile_error!("feature \"yara_c\" and feature \"yara_x\" cannot be enabled at the same time. Use \"--no-default-features\" to disable yara_c");
 
+    built::write_built_file().expect("Failed to acquire build-time information");
+
     platform_specific_arguments()?;
+    
     Ok(())
 }
 
