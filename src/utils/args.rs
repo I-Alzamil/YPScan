@@ -20,11 +20,18 @@ pub fn set_args() -> clap::Command {
     }
     drop(lock);
 
+    let binname: &str;
+    if cfg!(feature = "yara_x") {
+        binname = "YPScanX"
+    } else {
+        binname = "YPScan"
+    }
+
     // Build the args
-    clap::Command::new("YPScan")
+    clap::Command::new(binname)
         .version(crate::utils::constants::PKG_VERSION)
         .color(color_choice)
-        .bin_name("YPScan")
+        .bin_name(binname)
         .styles(crate::utils::constants::CLAP_STYLING)
         .arg(
             clap::Arg::new("ansi-encoding")
