@@ -165,7 +165,7 @@ pub fn set_args() -> clap::Command {
         .subcommand_required(true)
         .subcommand(
             clap::command!("scan")
-            .about("starts a file scan, by default scan all drives with 150 MB size limit and uses 1/2 CPUs")
+            .about("starts a file scan, by default scan all drives with 100 MB size limit and uses 1/2 CPUs")
             .arg(
                 clap::Arg::new("all-drives")
                     .short('a')
