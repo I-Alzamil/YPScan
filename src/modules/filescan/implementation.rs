@@ -75,7 +75,7 @@ impl Module for FScanner {
         } else if args.get_flag("no-size") {
             size_message = format!("File size limit is removed");
         } else {
-            size_message = format!("Default file size limit set to 150 MB");
+            size_message = format!("Default file size limit set to 100 MB");
         }
 
         if let Ok(Some(path)) = args.try_get_one::<String>("path") {
@@ -184,7 +184,7 @@ impl Module for FScanner {
         } else if args.get_flag("no-size") {
             file_size_limit = 0;
         } else {
-            file_size_limit = 150000000;
+            file_size_limit = 100000000;
         }
 
         // Start walkdir and fetch all files to be scanned and add them to the queue
