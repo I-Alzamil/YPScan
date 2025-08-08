@@ -216,7 +216,13 @@ impl Logger {
                         OutputType::CSV => "csv",
                         OutputType::JSON => "json",
                     };
-                    file_path = MY_PATH.join(format!("YPScan_{}.{}",DATETIME.as_str(),extention));
+                    let pkg_name ;
+                    if cfg!(feature = "yara_x") {
+                        pkg_name = "YPScanX"
+                    } else {
+                        pkg_name = "YPScan"
+                    }
+                    file_path = MY_PATH.join(format!("{}_{}.{}",pkg_name,DATETIME.as_str(),extention));
                 } else {
                     file_path = MY_PATH.join(lock.as_str());
                 }
