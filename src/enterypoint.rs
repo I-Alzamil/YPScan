@@ -84,7 +84,7 @@ fn setup_display() {
         color = false;
     }
 
-    if args.contains(&String::from("--no-progress")) || args.contains(&String::from("--q")) {
+    if args.contains(&String::from("--no-progress")) || args.contains(&String::from("-q")) {
         progress = false;
     }
 
