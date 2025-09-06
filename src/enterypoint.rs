@@ -65,7 +65,7 @@ fn setup_display() {
     }
 
     // Check if special output is selected to disable header display
-    if args.contains(&"--json-output".to_string()) || args.contains(&"--no-output".to_string()) || args.contains(&"--csv-output".to_string()) {
+    if args.contains(&String::from("--json-output")) || args.contains(&String::from("--no-output")) || args.contains(&String::from("--csv-output")) {
         // return and don't display header
         show_header = false;
         color = false;
@@ -80,11 +80,11 @@ fn setup_display() {
         progress = false;
     }
 
-    if args.contains(&"--no-color".to_string()) {
+    if args.contains(&String::from("--no-color")) {
         color = false;
     }
 
-    if args.contains(&"no-progress".to_string()) {
+    if args.contains(&String::from("--no-progress")) || args.contains(&String::from("--q")) {
         progress = false;
     }
 
