@@ -18,9 +18,15 @@ pub static ARGS: LazyLock<clap::ArgMatches> = LazyLock::new(||{
 
 // Process name for logging purposes
 pub static PROCESS_NAME: LazyLock<String> = LazyLock::new(|| {
+    let name: &str;
+    if cfg!(feature = "yara_x") {
+        name = "YPScanX"
+    } else {
+        name = "YPScan"
+    }
     match std::env::current_exe() {
-        Ok(path) => format!("{}",path.file_name().unwrap_or(std::ffi::OsStr::new("YPScan")).to_string_lossy()),
-        Err(_) => format!("YPScan"),
+        Ok(path) => format!("{}",path.file_name().unwrap_or(std::ffi::OsStr::new(name)).to_string_lossy()),
+        Err(_) => format!("{name}"),
     }
 });
 

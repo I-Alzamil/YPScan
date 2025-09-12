@@ -1,5 +1,3 @@
-use std::io::IsTerminal;
-
 use crate::utils::statics::{
     ARGS,
     LOGGER
@@ -31,7 +29,6 @@ pub fn set_args() -> clap::Command {
     clap::Command::new(binname)
         .version(crate::utils::constants::PKG_VERSION)
         .color(color_choice)
-        .bin_name(binname)
         .styles(crate::utils::constants::CLAP_STYLING)
         .arg(
             clap::Arg::new("ansi-encoding")
@@ -307,6 +304,7 @@ pub fn set_args() -> clap::Command {
 }
 
 pub fn setup_logger() {
+    use std::io::IsTerminal;
     // Check all logger related arguments and modify logger for each change
     if ARGS.get_flag("debug") {
         let mut lock = LOGGER.write().unwrap();
@@ -370,15 +368,16 @@ pub fn setup_logger() {
             let protocol = connection_string.next().unwrap();
             let connection = connection_string.next().unwrap();
             match lock.create_syslog(protocol,connection,1) {
-                Ok(_) => drop(lock),
+                Ok(_) => {
+                    crate::LOGDEBUG!("Successfully configured syslog to {}://{}",protocol,connection);
+                }
                 Err(e) => {
-                    drop(lock);
                     crate::LOGERROR!("{e}");
                 }
             }
         } else {
-            drop(lock);
             crate::LOGERROR!("Unable to read syslog connection string. Make sure to use either udp://IP:PORT or tcp://IP:PORT");
         }
+        drop(lock);
     }
 }
