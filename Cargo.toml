@@ -29,7 +29,7 @@ queue-file = "1.4"
 syslog = "6.1.1"
 rand = "0.9"
 linkme = "0.3"
-yara-x = { version = "1.6", optional = true } # yara_x dependencies
+yara-x = { version = "1.7", optional = true } # yara_x dependencies
 
 # Windows dependencies
 [target.'cfg(target_os = "windows")'.dependencies]
@@ -61,6 +61,6 @@ required-features = ["yara_x"]
 # Set release profile settings to reduce binary size
 [profile.release]
 strip = true
-opt-level = "s"
 lto = true
 codegen-units = 1
+panic = "abort"
