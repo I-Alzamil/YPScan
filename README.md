@@ -72,7 +72,7 @@ Encrypt/Decrypt subcommand:
           --only-alerts           Filter output level to alerts and higher
           --no-color              Switch off console color
           --no-output             Switch off console output
-           --csv-output            Change console logging to csv
+          --csv-output            Change console logging to csv
           --json-output           Change console logging to json
           --file-name <FILENAME>  Sets a custom filename to the log file
           --no-log                Switch off file output
@@ -142,10 +142,8 @@ Using "Edit system environment variables" from windows control panel, add the fo
 
 ## TO BE DONE
 
-- [ ] Add filename ioc.
 - [ ] Add an updater function in order to get up-to-date yara and iocs from open source repositories.
 - [ ] Add ability to scan processes.
-- [ ] Add c2 ioc.
 - [ ] Add more static analysis features.
 
 ## Credit
