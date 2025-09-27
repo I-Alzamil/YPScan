@@ -370,15 +370,17 @@ pub fn setup_logger() {
             let connection = connection_string.next().unwrap();
             match lock.create_syslog(protocol,connection,1) {
                 Ok(_) => {
+                    drop(lock);
                     crate::LOGDEBUG!("Successfully configured syslog to {}://{}",protocol,connection);
                 }
                 Err(e) => {
+                    drop(lock);
                     crate::LOGERROR!("{e}");
                 }
             }
         } else {
+            drop(lock);
             crate::LOGERROR!("Unable to read syslog connection string. Make sure to use either udp://IP:PORT or tcp://IP:PORT");
         }
-        drop(lock);
     }
 }
