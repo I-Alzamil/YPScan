@@ -28,6 +28,7 @@ pub fn set_args() -> clap::Command {
     // Build the args
     clap::Command::new(binname)
         .version(crate::utils::constants::PKG_VERSION)
+        .disable_version_flag(true)
         .color(color_choice)
         .styles(crate::utils::constants::CLAP_STYLING)
         .arg(
