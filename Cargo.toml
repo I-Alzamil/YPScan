@@ -1,6 +1,6 @@
 [package]
 name = "YPScan"
-version = "1.0.1"
+version = "1.0.2-dev"
 edition = "2024"
 
 [features]
@@ -10,7 +10,7 @@ yara_x = ["dep:yara-x"]
 
 [dependencies]
 owo-colors = "4.1"
-enable-ansi-support = "0.2"
+enable-ansi-support = "0.3"
 indicatif = "0.18"
 chrono = "0.4"
 walkdir = "2.5"
@@ -23,7 +23,7 @@ md5 = "0.8"
 sha1 = "0.10"
 sha2 = "0.10"
 clap = { version = "4.5", features = ["cargo"]}
-clap-cargo = "0.17"
+clap-cargo = "0.18"
 local-encoding = "0.2"
 queue-file = "1.4"
 syslog = "6.1.1"
@@ -34,11 +34,11 @@ yara-x = { version = "1.7", optional = true } # yara_x dependencies
 # Windows dependencies
 [target.'cfg(target_os = "windows")'.dependencies]
 verifysign = "0.2" # codesign checker
-yara = { version = "0.30", features = ["vendored","openssl-static"], optional = true } # yara_c dependencies for Windows
+yara = { version = "0.31", features = ["vendored","openssl-static"], optional = true } # yara_c dependencies for Windows
 
 # Non-Windows dependencies
 [target.'cfg(not(target_os = "windows"))'.dependencies]
-yara = { version = "0.30", features = ["vendored"], optional = true } # yara_c dependencies for Non-Windows
+yara = { version = "0.31", features = ["vendored"], optional = true } # yara_c dependencies for Non-Windows
 
 # Build imports for windows
 [target.'cfg(target_os = "windows")'.build-dependencies]
